@@ -1,6 +1,6 @@
 # divorce-model
 Divorce Financial Model
-[index.html.html](https://github.com/user-attachments/files/26313211/index.html.html)
+[index.html](https://github.com/user-attachments/files/26313211/index.html.html)
 <!DOCTYPE html>
 <html lang="en">
 <head>
