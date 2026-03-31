@@ -1,0 +1,1455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Estate Command · Salgado</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════ RESET & ROOT ═══════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:        #0f0f0f;
+  --surface:   #1a1a1a;
+  --surface2:  #242424;
+  --border:    #2e2e2e;
+  --border2:   #383838;
+  --text:      #e8e6e1;
+  --muted:     #7a7468;
+  --dim:       #555050;
+  --accent:    #4a8fd4;
+  --green:     #3a9a5c;
+  --green-bg:  #0d2018;
+  --green-bar: rgba(42,122,74,.25);
+  --red:       #d94f4f;
+  --red-bg:    #1f0d0d;
+  --red-bar:   rgba(184,58,58,.22);
+  --amber:     #c4860a;
+  --amber-bg:  #1f1500;
+  --rail-w:    60px;
+  --mono:'DM Mono',monospace;
+  --serif:'Instrument Serif',serif;
+  --sans:'DM Sans',sans-serif;
+}
+
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:#e8e6e1;font-family:var(--sans);font-size:14px;display:flex;flex-direction:column}
+
+/* ═══════════════════ TOPBAR ═══════════════════ */
+.topbar{position:relative;z-index:10;display:flex;align-items:center;justify-content:space-between;height:48px;padding:0 20px 0 calc(var(--rail-w) + 20px);background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+.topbar-title{font-family:var(--serif);font-size:16px;color:var(--text)}
+.topbar-case{font-family:var(--mono);font-size:10px;color:var(--dim);margin-left:10px;letter-spacing:.5px}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.pill{font-family:var(--mono);font-size:10px;padding:3px 10px;border-radius:20px;letter-spacing:.3px;display:flex;align-items:center;gap:5px}
+.pill-neg{background:var(--red-bg);color:var(--red);border:1px solid rgba(184,58,58,.2)}
+.pill-warn{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(138,92,0,.2)}
+.pulse{width:5px;height:5px;border-radius:50%;background:var(--amber);animation:pulse 1.8s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(1.5)}}
+
+/* ═══════════════════ APP BODY ═══════════════════ */
+.app-body{display:flex;flex:1;overflow:hidden;position:relative}
+
+/* ═══════════════════ SIDE RAIL ═══════════════════ */
+.rail{width:var(--rail-w);flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:14px 0;gap:2px;overflow-y:auto;scrollbar-width:none}
+.rail::-webkit-scrollbar{display:none}
+.rail-btn{position:relative;width:44px;height:44px;border-radius:10px;border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--dim);transition:background .15s,color .15s;font-family:var(--sans)}
+.rail-btn:hover{background:var(--surface2);color:var(--text)}
+.rail-btn.active{background:var(--amber-bg);color:var(--amber)}
+.rail-btn.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:22px;background:var(--amber);border-radius:0 3px 3px 0}
+.rail-icon{width:17px;height:17px}
+.rail-label{font-size:8px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;line-height:1}
+.rail-badge{position:absolute;top:7px;right:7px;width:6px;height:6px;border-radius:50%;background:var(--red);border:1.5px solid var(--surface)}
+.rail-divider{width:24px;height:1px;background:var(--border);margin:5px 0;flex-shrink:0}
+
+/* ═══════════════════ MAIN ═══════════════════ */
+.main{flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:var(--border2) transparent}
+.main::-webkit-scrollbar{width:4px}
+.main::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.panel{display:none}
+.panel.active{display:block}
+
+/* ═══════════════════ SHARED COMPONENTS ═══════════════════ */
+.tab-wrap{max-width:800px;margin:0 auto;padding:20px 24px 48px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:14px;overflow:hidden}
+.card-head{padding:9px 14px;background:var(--surface2);border-bottom:1px solid var(--border);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--muted);display:flex;align-items:center;justify-content:space-between}
+.card-body{padding:14px}
+.dt{width:100%;border-collapse:collapse;font-size:13px}
+.dt tr{border-bottom:1px solid var(--border)}
+.dt tr:last-child{border-bottom:none}
+.dt td{padding:7px 0;vertical-align:top;line-height:1.4}
+.dt td:last-child{text-align:right;font-family:var(--mono);font-size:12px;white-space:nowrap;padding-left:12px}
+.dt .lbl{color:var(--muted)}
+.dt .sep td{font-weight:600;border-top:1px solid var(--border);padding-top:10px}
+.dt .tot td{color:var(--accent);font-weight:700;font-size:13px;border-top:2px solid var(--accent);padding-top:10px}
+.pos{color:var(--green)!important}
+.neg{color:var(--red)!important}
+.warn{color:var(--amber)!important}
+.stat-row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}
+@media(min-width:480px){.stat-row{grid-template-columns:repeat(3,1fr)}}
+@media(min-width:700px){.stat-row{grid-template-columns:repeat(4,1fr)}}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px}
+.s-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;font-weight:600}
+.s-value{font-size:18px;font-weight:500;font-family:var(--mono)}
+.s-sub{font-size:10px;color:var(--muted);margin-top:2px}
+.slider-group{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:10px}
+.slider-label{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.slider-label span:first-child{font-size:12px;font-weight:500}
+.slider-val{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--accent);background:var(--surface2);padding:2px 8px;border-radius:4px;min-width:80px;text-align:right}
+input[type=range]{width:100%;-webkit-appearance:none;height:4px;border-radius:2px;background:var(--border2);outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid var(--bg)}
+input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid var(--bg)}
+.toggle-row{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:12px}
+.toggle-btn{flex:1;padding:9px;font-size:12px;font-weight:600;background:var(--surface);color:var(--muted);border:none;cursor:pointer;transition:all .15s;font-family:var(--sans)}
+.toggle-btn.active{background:var(--accent);color:#fff}
+.result-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:12px;text-align:center}
+.r-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;font-weight:600}
+.r-value{font-size:26px;font-weight:700;font-family:var(--mono)}
+.r-sub{font-size:11px;color:var(--muted);margin-top:4px}
+.notice{background:rgba(138,92,0,.08);border:1px solid rgba(138,92,0,.25);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--amber);margin-bottom:12px;line-height:1.5}
+.notice strong{display:block;margin-bottom:2px}
+.bar-chart{margin-top:4px}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.bar-name{font-size:11px;color:var(--muted);min-width:80px;flex:0 0 80px}
+.bar-track{flex:1;background:var(--surface2);border-radius:2px;height:14px;overflow:hidden;border:1px solid var(--border)}
+.bar-fill{height:100%;border-radius:2px;transition:width .3s}
+.bar-val{font-size:11px;font-family:var(--mono);color:var(--muted);min-width:55px;text-align:right}
+.apply-btn{width:100%;padding:12px;background:var(--accent);color:#fff;font-size:14px;font-weight:700;border:none;border-radius:8px;cursor:pointer;margin-top:16px;font-family:var(--sans);transition:opacity .15s}
+.apply-btn:hover{opacity:.85}
+.s-field{display:flex;flex-direction:column;gap:4px}
+.s-field label{font-size:11px;color:var(--muted)}
+.s-field input{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:13px;padding:8px 10px;width:100%}
+.s-field input:focus{outline:none;border-color:var(--accent)}
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(min-width:600px){.settings-grid{grid-template-columns:1fr 1fr 1fr}}
+.settings-section{margin-bottom:20px}
+.settings-section h3{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.checklist-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px}
+.checklist-item:last-child{border-bottom:none}
+.check-dot{flex:0 0 8px;height:8px;width:8px;border-radius:50%;margin-top:4px}
+.check-text{flex:1}
+.check-text strong{color:var(--text);display:block}
+.check-text small{color:var(--muted)}
+.two-col{display:grid;grid-template-columns:1fr;gap:12px}
+@media(min-width:600px){.two-col{grid-template-columns:1fr 1fr}}
+.section-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:8px;margin-top:16px}
+.section-label:first-child{margin-top:0}
+.disclaimer{font-size:11px;color:var(--muted);text-align:center;padding:16px;border-top:1px solid var(--border);line-height:1.6}
+
+/* ═══════════════════ COMMAND PAGE ═══════════════════ */
+.cmd-wrap{max-width:780px;margin:0 auto;padding:0 0 48px}
+.top-strip{display:flex;align-items:center;justify-content:space-between;padding:14px 28px 12px;border-bottom:1px solid var(--border);background:var(--surface)}
+.ts-left{display:flex;align-items:baseline;gap:8px}
+.ts-name{font-family:var(--serif);font-size:15px;color:var(--text)}
+.ts-case{font-family:var(--mono);font-size:10px;color:var(--dim)}
+.ts-right{display:flex;align-items:center;gap:8px}
+.countdown-inline{display:flex;align-items:baseline;gap:4px;background:var(--amber-bg);border:1px solid rgba(138,92,0,.2);border-radius:6px;padding:4px 12px}
+.ci-days{font-family:var(--mono);font-size:18px;font-weight:400;color:var(--amber);line-height:1}
+.ci-label{font-size:10px;color:var(--amber);opacity:.8;letter-spacing:.5px}
+.ci-date{font-family:var(--mono);font-size:10px;color:var(--amber);opacity:.65;margin-left:4px}
+.section{padding:20px 28px;border-bottom:1px solid var(--border)}
+.section:last-child{border-bottom:none}
+.section-head{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.section-head hr{flex:1;border:none;border-top:1px solid var(--border)}
+.section-title{font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--dim);white-space:nowrap}
+.position-controls{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}
+.control-block{padding:14px 16px;border-radius:8px;border:1px solid var(--border)}
+.cb-green{background:var(--green-bg);border-color:rgba(42,122,74,.2)}
+.cb-red{background:var(--red-bg);border-color:rgba(184,58,58,.2)}
+.cb-label{font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.cb-value{font-family:var(--mono);font-size:26px;font-weight:300;line-height:1;letter-spacing:-1px}
+.cb-green .cb-value{color:var(--green)}
+.cb-red   .cb-value{color:var(--red)}
+.cb-pct{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:4px}
+.split-bar-section{margin-bottom:18px}
+.split-bar{height:20px;border-radius:4px;overflow:hidden;display:flex;position:relative;background:var(--surface2);border:1px solid var(--border)}
+.split-toby{width:43%;background:var(--green-bar);border-right:2px solid var(--surface);display:flex;align-items:center;padding-left:9px;font-family:var(--mono);font-size:10px;color:var(--green);font-weight:500}
+.split-brandy{flex:1;background:var(--red-bar);display:flex;align-items:center;justify-content:flex-end;padding-right:9px;font-family:var(--mono);font-size:10px;color:var(--red);font-weight:500}
+.split-mid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(58,110,168,.5)}
+.split-mid-tick{position:absolute;left:50%;transform:translateX(-50%);bottom:-16px;font-size:8px;color:var(--accent);font-family:var(--mono);white-space:nowrap}
+.asset-categories{display:grid;grid-template-columns:repeat(2,1fr);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.asset-col:first-child{border-right:1px solid var(--border)}
+.asset-col-head{padding:8px 14px;background:var(--surface2);border-bottom:1px solid var(--border);font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+.asset-col-head .col-total{font-family:var(--mono);font-size:11px;font-weight:400;text-transform:none;letter-spacing:0}
+.asset-row{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;border-bottom:1px solid var(--border);font-size:12px}
+.asset-row:last-child{border-bottom:none}
+.ar-cat{color:var(--muted)}
+.ar-val{font-family:var(--mono);font-size:11px;color:var(--text)}
+.burn-rows{border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.burn-row{display:flex;justify-content:space-between;align-items:center;padding:11px 16px;border-bottom:1px solid var(--border);font-size:13px}
+.burn-row:last-child{border-bottom:none}
+.br-name{color:var(--text)}
+.br-sub{font-size:10px;color:var(--dim);margin-top:1px}
+.br-val{font-family:var(--mono);font-size:12px;color:var(--red);white-space:nowrap;padding-left:16px}
+.burn-total-row{background:var(--red-bg);display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-top:1px solid rgba(184,58,58,.2)}
+.btr-name{font-size:13px;font-weight:600;color:var(--text)}
+.btr-val{font-family:var(--mono);font-size:16px;color:var(--red)}
+.judicial-callout{margin-top:12px;padding:11px 14px;background:var(--red-bg);border:1px solid rgba(184,58,58,.15);border-left:3px solid var(--red);border-radius:0 6px 6px 0;font-size:11px;color:var(--red);font-style:italic;line-height:1.6}
+.eq-hero{display:grid;grid-template-columns:1fr auto;gap:24px;align-items:start;padding:4px 0 8px}
+.eq-label{font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.eq-value{font-family:var(--serif);font-size:56px;color:var(--amber);line-height:1;letter-spacing:-1px}
+.eq-sub{font-size:12px;color:var(--muted);margin-top:8px;font-family:var(--mono)}
+.eq-right{text-align:right;padding-top:4px}
+.eq-stat{margin-bottom:10px}
+.eq-stat:last-child{margin-bottom:0}
+.eq-stat-label{font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);margin-bottom:3px}
+.eq-stat-value{font-family:var(--mono);font-size:16px;color:var(--red);line-height:1}
+.eq-stat-value.muted{color:var(--amber)}
+.sc-name-wrap{display:flex;flex-direction:column;gap:2px}
+.sc-sub{font-size:10px;color:var(--dim);font-family:var(--mono)}
+.scenario-rows{margin-top:16px;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.sc-row{display:flex;justify-content:space-between;align-items:center;padding:9px 14px;border-bottom:1px solid var(--border);font-size:12px}
+.sc-row:last-child{border-bottom:none}
+.sc-name{color:var(--muted)}
+.sc-val{font-family:var(--mono);font-size:11px}
+.sc-val.pos{color:var(--green)}
+.sc-val.warn{color:var(--amber)}
+.sc-val.neg{color:var(--red)}
+.depletion-section{background:#fdf8f5}
+.dep-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+.dep-kpi{padding:12px 14px;border-radius:8px;border:1px solid}
+.dep-kpi-red{background:var(--red-bg);border-color:rgba(184,58,58,.2)}
+.dep-kpi-amber{background:var(--amber-bg);border-color:rgba(138,92,0,.2)}
+.dk-label{font-size:9px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+.dk-value{font-family:var(--mono);font-size:18px;font-weight:400;line-height:1}
+.dep-kpi-red .dk-value{color:var(--red)}
+.dep-kpi-amber .dk-value{color:var(--amber)}
+.dk-sub{font-size:10px;color:var(--dim);margin-top:3px}
+.dep-rows{border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px}
+.dep-row{display:flex;justify-content:space-between;align-items:center;padding:9px 14px;border-bottom:1px solid var(--border);font-size:12px}
+.dep-row:last-child{border-bottom:none}
+.dep-name{color:var(--muted)}
+.dep-note{font-size:10px;color:var(--dim);margin-left:6px;font-style:italic}
+.dep-val{font-family:var(--mono);font-size:11px;color:var(--red);white-space:nowrap;padding-left:12px}
+.dep-row-total{background:var(--red-bg);border-top:1px solid rgba(184,58,58,.15)}
+.dep-name-total{font-size:13px;font-weight:600;color:var(--text)}
+.dep-val-total{font-family:var(--mono);font-size:15px;color:var(--red)}
+.chart-label{font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);margin-bottom:8px}
+.chart-wrap{position:relative;width:100%;height:200px;margin-bottom:8px}
+.chart-wrap canvas{display:block;width:100%!important;height:200px!important}
+.chart-legend{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:14px;font-size:11px;color:var(--muted)}
+.legend-item{display:flex;align-items:center;gap:5px}
+.legend-line{display:inline-block;width:14px;height:2px;border-radius:1px}
+.accent-line{background:var(--accent)}
+.red-line{background:var(--red)}
+.legend-dot{display:inline-block;width:8px;height:8px;border-radius:50%}
+.amber-dot{background:var(--amber)}
+.dep-judicial{padding:11px 14px;background:var(--red-bg);border:1px solid rgba(184,58,58,.15);border-left:3px solid var(--red);border-radius:0 6px 6px 0;font-size:11px;color:var(--muted);line-height:1.7}
+.dep-judicial strong{color:var(--red)}
+
+/* ═══════════════════ PASSWORD GATE ═══════════════════ */
+.gate{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;align-items:center;justify-content:center}
+.gate-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:36px 40px;width:320px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.08)}
+.gate-title{font-family:var(--serif);font-size:22px;color:var(--text);margin-bottom:4px}
+.gate-sub{font-size:11px;color:var(--dim);font-family:var(--mono);margin-bottom:24px;letter-spacing:.5px}
+.gate-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:#e8e6e1;font-family:var(--mono);font-size:16px;padding:12px 14px;text-align:center;letter-spacing:3px;margin-bottom:12px}
+.gate-input:focus{outline:none;border-color:var(--accent)}
+.gate-btn{width:100%;padding:12px;background:var(--accent);color:#fff;font-size:14px;font-weight:700;border:none;border-radius:8px;cursor:pointer;font-family:var(--sans)}
+.gate-btn:hover{opacity:.88}
+.gate-err{font-size:11px;color:var(--red);margin-top:8px;min-height:16px}
+
+
+.bottom-nav{display:none}
+@media(max-width:680px){
+  :root{--rail-w:0px}
+  .rail{display:none}
+  .bottom-nav{display:block;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:100;padding:8px 0 max(8px,env(safe-area-inset-bottom))}
+  .bn-inner{display:flex;justify-content:space-around}
+  .bn-btn{display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;color:var(--dim);padding:4px 8px;border-radius:8px;font-family:var(--sans);position:relative}
+  .bn-btn.active{color:var(--amber)}
+  .bn-btn svg{width:20px;height:20px}
+  .bn-label{font-size:8px;font-weight:500;letter-spacing:.5px;text-transform:uppercase}
+  .bn-badge{position:absolute;top:2px;right:6px;width:6px;height:6px;border-radius:50%;background:var(--red);border:1.5px solid var(--surface)}
+  .topbar{padding-left:16px}
+  .section{padding:16px}
+  .top-strip{padding:12px 16px}
+  .position-controls{gap:8px}
+  .cb-value{font-size:20px}
+  .eq-value{font-size:38px}
+  .eq-hero{grid-template-columns:1fr}
+  .cmd-wrap{padding-bottom:80px}
+  .asset-categories{grid-template-columns:1fr}
+  .asset-col:first-child{border-right:none;border-bottom:1px solid var(--border)}
+  .dep-kpis{grid-template-columns:repeat(2,1fr)}
+  .tab-wrap{padding:16px 16px 80px}
+  .stat-row{grid-template-columns:repeat(2,1fr)}
+}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.top-strip{animation:fadeUp .3s ease both}
+.section:nth-child(1){animation:fadeUp .3s .05s ease both}
+.section:nth-child(2){animation:fadeUp .3s .1s ease both}
+.section:nth-child(3){animation:fadeUp .3s .15s ease both}
+.section:nth-child(4){animation:fadeUp .3s .2s ease both}
+</style>
+</head>
+<body>
+
+<!-- PASSWORD GATE -->
+<div class="gate" id="gate">
+  <div class="gate-card">
+    <div class="gate-title">Estate Command</div>
+    <div class="gate-sub">25FL003122E · CONFIDENTIAL</div>
+    <input class="gate-input" type="password" id="gate-input" placeholder="••••••••" autocomplete="current-password">
+    <button class="gate-btn" onclick="checkGate()">Enter</button>
+    <div class="gate-err" id="gate-err"></div>
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div>
+    <span class="topbar-title">Estate Command</span>
+    <span class="topbar-case">25FL003122E · v12</span>
+  </div>
+  <div class="topbar-right">
+    <span class="pill pill-neg">Negotiating</span>
+    <span class="pill pill-warn"><span class="pulse"></span><span id="tb-days">—</span> days · Apr 14</span>
+  </div>
+</div>
+
+<div class="app-body">
+
+<!-- ═══ RAIL ═══ -->
+<nav class="rail">
+  <button class="rail-btn active" onclick="showPanel('command',this)" title="Command">
+    <svg class="rail-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+      <rect x="2" y="2" width="7" height="7" rx="1.5"/><rect x="11" y="2" width="7" height="7" rx="1.5"/>
+      <rect x="2" y="11" width="7" height="7" rx="1.5"/><rect x="11" y="11" width="7" height="7" rx="1.5"/>
+    </svg>
+    <span class="rail-label">Home</span>
+  </button>
+  <div class="rail-divider"></div>
+  <button class="rail-btn" onclick="showPanel('estate',this)" title="Estate">
+    <svg class="rail-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M10 2L2 8v10h5v-5h6v5h5V8z"/></svg>
+    <span class="rail-label">Estate</span>
+  </button>
+  <button class="rail-btn" onclick="showPanel('walkaway',this)" title="Walkaway">
+    <svg class="rail-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 10h14M13 5l5 5-5 5"/></svg>
+    <span class="rail-label">Walkaway</span>
+  </button>
+  <button class="rail-btn" onclick="showPanel('cashflow',this)" title="Cash Flow">
+    <svg class="rail-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 14l5-5 4 4 7-8"/></svg>
+    <span class="rail-label">Cash</span>
+  </button>
+  <div class="rail-divider"></div>
+  <button class="rail-btn" onclick="showPanel('business',this)" title="Business Impact">
+    <svg class="rail-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="7" width="16" height="11" rx="1.5"/><path d="M7 7V5a3 3 0 016 0v2"/><path d="M10 12v2"/></svg>
+    <span class="rail-label">Biz</span>
+  </button>
+  <button class="rail-btn" onclick="showPanel('scenarios',this)" title="Scenarios">
+    <svg class="rail-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 16l5-6 4 3 7-9"/><circle cx="16" cy="4" r="1.5" fill="currentColor" stroke="none"/></svg>
+    <span class="rail-label">Scenarios</span>
+  </button>
+  <button class="rail-btn" onclick="showPanel('pending',this)" title="Pending">
+    <div class="rail-badge"></div>
+    <svg class="rail-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="3" width="14" height="14" rx="2"/><path d="M7 7h6M7 10h6M7 13h4"/></svg>
+    <span class="rail-label">Pending</span>
+  </button>
+  <div class="rail-divider"></div>
+  <button class="rail-btn" onclick="showPanel('settings',this)" title="Settings">
+    <svg class="rail-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="10" cy="10" r="2.5"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.2 4.2l1.4 1.4M14.4 14.4l1.4 1.4M4.2 15.8l1.4-1.4M14.4 5.6l1.4-1.4"/></svg>
+    <span class="rail-label">Settings</span>
+  </button>
+</nav>
+
+<main class="main">
+
+<!-- ═══════════════════ COMMAND PAGE ═══════════════════ -->
+<div class="panel active" id="panel-command">
+<div class="cmd-wrap">
+
+  <div class="top-strip">
+    <div class="ts-left"><span class="ts-name">Salgado</span><span class="ts-case">v12 · Updated Mar 31, 2026</span></div>
+    <div class="ts-right">
+      <div class="countdown-inline"><span class="ci-days" id="cmd-days">—</span><span class="ci-label">days</span><span class="ci-date">· Apr 14</span></div>
+      <span class="pill pill-neg" style="font-size:9px">Negotiating</span>
+    </div>
+  </div>
+
+  <!-- POSITION -->
+  <div class="section">
+    <div class="section-head"><hr><span class="section-title">Position</span><hr></div>
+    <div class="position-controls">
+      <div class="control-block cb-green">
+        <div class="cb-label">Toby controls</div>
+        <div class="cb-value" id="cmd-toby-val">$1,099,120</div>
+        <div class="cb-pct" id="cmd-toby-pct">43% of total estate</div>
+      </div>
+      <div class="control-block cb-red">
+        <div class="cb-label">Brandy controls</div>
+        <div class="cb-value" id="cmd-brandy-val">$1,458,465</div>
+        <div class="cb-pct" id="cmd-brandy-pct">57% of total estate</div>
+      </div>
+    </div>
+    <div class="split-bar-section">
+      <div style="position:relative;padding-bottom:20px">
+        <div class="split-bar">
+          <div class="split-toby" id="cmd-split-toby" style="width:43%">Toby 43%</div>
+          <div class="split-brandy" id="cmd-split-brandy">Brandy 57%</div>
+          <div class="split-mid"></div>
+        </div>
+        <div class="split-mid-tick">50/50 · <span id="cmd-target">$1,278,793</span> each</div>
+      </div>
+    </div>
+    <div class="asset-categories">
+      <div class="asset-col">
+        <div class="asset-col-head"><span>Toby's assets</span><span class="col-total pos" id="cmd-toby-total">—</span></div>
+        <div class="asset-row"><span class="ar-cat">Real estate (RKD)</span><span class="ar-val" id="cmd-rkd">—</span></div>
+        <div class="asset-row"><span class="ar-cat">TSLA — 185 sh</span><span class="ar-val" id="cmd-stocks">—</span></div>
+        <div class="asset-row"><span class="ar-cat">META — 30 sh</span><span class="ar-val" id="cmd-meta">—</span></div>
+        <div class="asset-row"><span class="ar-cat">Life insurance (CSV)</span><span class="ar-val" id="cmd-life">—</span></div>
+        <div class="asset-row"><span class="ar-cat">Vehicles</span><span class="ar-val" id="cmd-vehicles">—</span></div>
+        <div class="asset-row"><span class="ar-cat">Sports &amp; other</span><span class="ar-val" id="cmd-sports">—</span></div>
+      </div>
+      <div class="asset-col">
+        <div class="asset-col-head"><span>Brandy's assets</span><span class="col-total neg" id="cmd-brandy-total">—</span></div>
+        <div class="asset-row"><span class="ar-cat">Paseo net equity</span><span class="ar-val" id="cmd-paseo-net">—</span></div>
+        <div class="asset-row"><span class="ar-cat">Home furnishings</span><span class="ar-val" id="cmd-furn">—</span></div>
+        <div class="asset-row"><span class="ar-cat">Porsche Cayenne</span><span class="ar-val" id="cmd-cayenne">—</span></div>
+        <div class="asset-row" style="font-size:11px;font-style:italic"><span class="ar-cat" style="color:var(--dim)">Occupied rent-free</span><span class="ar-val" style="color:var(--dim)">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BURN -->
+  <div class="section">
+    <div class="section-head"><hr><span class="section-title">Estate destruction</span><hr></div>
+    <div class="burn-rows">
+      <div class="burn-row">
+        <div><div class="br-name">Toby cash deficit</div><div class="br-sub">Income $<span id="cmd-income-disp">7,200</span> − rent − support − food − gas − other</div></div>
+        <div class="br-val" id="burn-toby">—</div>
+      </div>
+      <div class="burn-row">
+        <div><div class="br-name">Paseo burn</div><div class="br-sub">Interest + taxes &amp; insurance — Brandy pays nothing</div></div>
+        <div class="br-val" id="burn-paseo">—</div>
+      </div>
+      <div class="burn-total-row">
+        <div class="btr-name">Total estate destruction / month</div>
+        <div class="btr-val" id="burn-total">—</div>
+      </div>
+    </div>
+    <div class="judicial-callout">"Every month without a listing order destroys <strong id="burn-judge">—</strong> in marital estate value — harming both parties."</div>
+  </div>
+
+  <!-- EQUALIZATION -->
+  <div class="section">
+    <div class="section-head"><hr><span class="section-title">Equalization</span><hr></div>
+    <div class="eq-hero">
+      <div class="eq-left">
+        <div class="eq-label">Equalization owed → Toby</div>
+        <div class="eq-value" id="cmd-eq-val">$179,673</div>
+        <div class="eq-sub" id="cmd-eq-sub">Half the $359,345 gap · 50/50 target $1,278,793</div>
+      </div>
+      <div class="eq-right">
+        <div class="eq-stat"><div class="eq-stat-label">Estate burns</div><div class="eq-stat-value" id="eq-burns">—</div></div>
+        <div class="eq-stat"><div class="eq-stat-label">Eq. gone in</div><div class="eq-stat-value muted" id="eq-gone">—</div></div>
+      </div>
+    </div>
+    <div class="scenario-rows">
+      <div class="sc-row">
+        <div class="sc-name-wrap"><span class="sc-name">Paseo valuation</span><span class="sc-sub" id="sc-paseo-val-label">—</span></div>
+        <div style="text-align:right"><span class="sc-val pos" id="sc-gap-eq">—</span><div class="sc-sub" style="color:var(--dim)">gap <span id="sc-gap-total">—</span></div></div>
+      </div>
+      <div class="sc-row">
+        <div class="sc-name-wrap"><span class="sc-name">Sale at 5% costs</span><span class="sc-sub" id="sc-sale-cost-label">—</span></div>
+        <div style="text-align:right"><span class="sc-val warn" id="sc-sale-net">—</span><div class="sc-sub" style="color:var(--dim)">net after selling costs</div></div>
+      </div>
+      <div class="sc-row" style="background:var(--red-bg)">
+        <span class="sc-name" style="font-weight:500;color:var(--text)">Cost of each additional month</span>
+        <span class="sc-val neg" id="sc-monthly">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- DEPLETION -->
+  <div class="section depletion-section">
+    <div class="section-head"><hr><span class="section-title" style="color:var(--red)">🔥 Marital estate depletion</span><span style="font-size:9px;color:var(--dim);white-space:nowrap">Updates live</span><hr></div>
+    <div class="dep-kpis">
+      <div class="dep-kpi dep-kpi-red"><div class="dk-label">Estate burns / month</div><div class="dk-value" id="dep-monthly">—</div><div class="dk-sub">Both parties losing</div></div>
+      <div class="dep-kpi dep-kpi-red"><div class="dk-label">Estate burns / year</div><div class="dk-value" id="dep-annual">—</div><div class="dk-sub">Annualized destruction</div></div>
+      <div class="dep-kpi dep-kpi-amber"><div class="dk-label">Eq. consumed in</div><div class="dk-value" id="dep-consumed">—</div><div class="dk-sub">Months until eq. is gone</div></div>
+      <div class="dep-kpi dep-kpi-amber"><div class="dk-label">Remaining eq. today</div><div class="dk-value" id="dep-remaining">—</div><div class="dk-sub">After <span id="dep-paid-mo">2</span> mo paid</div></div>
+    </div>
+    <div class="dep-rows">
+      <div class="dep-row"><span class="dep-name">Toby cash deficit / month</span><span class="dep-val" id="dep-toby-def">—</span></div>
+      <div class="dep-row"><span class="dep-name">Paseo interest / month <span class="dep-note">non-recoverable</span></span><span class="dep-val" id="dep-paseo-int">—</span></div>
+      <div class="dep-row"><span class="dep-name">Paseo taxes &amp; insurance / month <span class="dep-note">Brandy occupies rent-free</span></span><span class="dep-val" id="dep-paseo-esc">—</span></div>
+      <div class="dep-row dep-row-total"><span class="dep-name-total">Total estate burn / month</span><span class="dep-val-total" id="dep-total">—</span></div>
+    </div>
+    <div class="chart-label">Equalization remaining vs. cumulative estate burn</div>
+    <div class="chart-wrap"><canvas id="dep-chart"></canvas></div>
+    <div class="chart-legend">
+      <span class="legend-item"><span class="legend-line accent-line"></span>Equalization remaining</span>
+      <span class="legend-item"><span class="legend-line red-line"></span>Cumulative estate burn</span>
+      <span class="legend-item"><span class="legend-dot amber-dot"></span>Today (~mo <span id="dep-today-mo">2</span>)</span>
+    </div>
+    <div class="dep-judicial"><strong>Judicial argument:</strong> The marital estate loses <strong id="dep-judicial-burn">—</strong>/month in real wealth — <strong id="dep-judicial-detail">—</strong> in non-recoverable mortgage interest, <strong id="dep-judicial-escrow">—</strong>/mo in property taxes &amp; insurance, plus <strong id="dep-judicial-toby">—</strong>/mo cash deficit while Brandy occupies the asset rent-free. Prompt resolution is in both parties' interest.</div>
+  </div>
+
+</div>
+</div><!-- /command -->
+
+<!-- ═══════════════════ ESTATE TAB ═══════════════════ -->
+<div class="panel" id="panel-estate">
+<div class="tab-wrap">
+  <div class="stat-row">
+    <div class="stat"><div class="s-label">Toby Controls</div><div class="s-value pos" id="es-toby-controls">—</div><div class="s-sub">Assets in hand</div></div>
+    <div class="stat"><div class="s-label">Brandy Controls</div><div class="s-value neg" id="es-brandy-controls">—</div><div class="s-sub">Paseo equity + furnishings</div></div>
+    <div class="stat"><div class="s-label">Total Estate</div><div class="s-value" id="es-total">—</div><div class="s-sub">Combined marital</div></div>
+    <div class="stat"><div class="s-label">50/50 Target Each</div><div class="s-value" id="es-target">—</div><div class="s-sub">Equal split</div></div>
+  </div>
+  <div class="card" style="border-color:var(--red);background:var(--red-bg)">
+    <div class="card-head" style="background:rgba(184,58,58,.1);color:var(--red)"><span>⚖ Position Imbalance</span><span id="es-imbalance-badge" style="font-family:var(--mono)"></span></div>
+    <div class="card-body">
+      <table class="dt">
+        <tr><td class="lbl">Brandy controls</td><td id="es-b-controls-detail"></td></tr>
+        <tr><td class="lbl">Toby controls</td><td id="es-t-controls-detail"></td></tr>
+        <tr class="tot"><td>Brandy has more by</td><td class="neg" id="es-imbalance"></td></tr>
+        <tr><td class="lbl">Equalization owed to Toby</td><td class="pos" id="es-eq"></td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="two-col">
+    <div class="card">
+      <div class="card-head"><span>Toby's Assets</span><span class="pos" id="es-toby-total" style="font-family:var(--mono)"></span></div>
+      <div class="card-body">
+        <table class="dt">
+          <tr><td class="lbl">RKD Gross Value</td><td id="es-rkd-gross"></td></tr>
+          <tr><td class="lbl">RKD Mortgage Payoff</td><td class="neg" id="es-rkd-mort"></td></tr>
+          <tr class="sep"><td>RKD Net Equity</td><td id="es-rkd"></td></tr>
+          <tr><td class="lbl">TSLA — 185 sh</td><td id="es-tsla"></td></tr>
+          <tr><td class="lbl">META — 30 sh</td><td id="es-meta"></td></tr>
+          <tr><td class="lbl">Life Insurance CSV</td><td id="es-life"></td></tr>
+          <tr><td class="lbl">Porsche 911 C4S (2003)</td><td id="es-p911"></td></tr>
+          <tr><td class="lbl">Porsche 944 Turbo (1986)</td><td id="es-p944"></td></tr>
+          <tr><td class="lbl">Porsche 944S (1987, NR)</td><td id="es-p944s"></td></tr>
+          <tr><td class="lbl">Ford F-250 (2003)</td><td id="es-ford"></td></tr>
+          <tr><td class="lbl">Ford Flatbed (1998)</td><td id="es-flatbed" class="warn"></td></tr>
+          <tr><td class="lbl">Honda Odyssey (2006, NR)</td><td id="es-odyssey"></td></tr>
+          <tr><td class="lbl">Yamaha PW50 (2006)</td><td id="es-pw50"></td></tr>
+          <tr><td class="lbl">Suzuki DRZ400SM (2009)</td><td id="es-drz"></td></tr>
+          <tr><td class="lbl">Trailer Homemade</td><td id="es-trailer"></td></tr>
+          <tr><td class="lbl">Sports &amp; Climbing Equipment</td><td id="es-sports"></td></tr>
+          <tr class="tot"><td>TOTAL</td><td class="pos" id="es-toby-sum"></td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><span>Brandy's Assets</span><span class="neg" id="es-brandy-total" style="font-family:var(--mono)"></span></div>
+      <div class="card-body">
+        <table class="dt">
+          <tr><td class="lbl">Paseo Gross Value</td><td id="es-paseo-gross"></td></tr>
+          <tr><td class="lbl">Paseo Mortgage</td><td class="neg" id="es-paseo-mort"></td></tr>
+          <tr class="sep"><td>Paseo Net Equity</td><td id="es-paseo-net"></td></tr>
+          <tr><td class="lbl">Home Furnishings</td><td id="es-furn"></td></tr>
+          <tr><td class="lbl">Porsche Cayenne (2006)</td><td id="es-cayenne"></td></tr>
+          <tr class="tot"><td>TOTAL</td><td class="neg" id="es-brandy-sum"></td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="disclaimer">Values reflect current estimates. Paseo value flows from Walkaway slider. Stock prices approximate.</div>
+</div>
+</div><!-- /estate -->
+
+<!-- ═══════════════════ WALKAWAY TAB ═══════════════════ -->
+<div class="panel" id="panel-walkaway">
+<div class="tab-wrap">
+  <div class="toggle-row">
+    <button class="toggle-btn active" id="wa-mode-buyout" onclick="setWaMode('buyout')">Brandy Buys Out</button>
+    <button class="toggle-btn" id="wa-mode-sale" onclick="setWaMode('sale')">Paseo Sold</button>
+  </div>
+  <div class="slider-group">
+    <div class="slider-label"><span>Paseo Value</span><span class="slider-val" id="wa-paseo-val">—</span></div>
+    <input type="range" id="wa-paseo" min="1400000" max="2000000" step="5000" oninput="onSlider('paseo',+this.value);renderAll()">
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:4px"><span>$1.4M (Redfin)</span><span>$2.0M</span></div>
+  </div>
+  <div class="slider-group" id="wa-costs-group" style="display:none">
+    <div class="slider-label"><span>Selling Costs %</span><span class="slider-val" id="wa-costs-val">—</span></div>
+    <input type="range" id="wa-costs" min="1" max="8" step="0.5" value="5" oninput="onSlider('sellingCosts',+this.value);renderAll()">
+  </div>
+  <div class="slider-group">
+    <div class="slider-label"><span>Mortgage Payoff</span><span class="slider-val" id="wa-mort-val">—</span></div>
+    <input type="range" id="wa-mort" min="300000" max="370000" step="1000" oninput="onSlider('paseoMort',+this.value);renderAll()">
+  </div>
+  <div class="card">
+    <div class="card-head">Walkaway Analysis — <span id="wa-mode-label">Buyout Mode</span></div>
+    <div class="card-body">
+      <table class="dt">
+        <tr><td class="lbl">Paseo Gross Value</td><td id="wa-gross">—</td></tr>
+        <tr id="wa-selling-row" style="display:none"><td class="lbl">Less: Selling Costs</td><td class="neg" id="wa-selling">—</td></tr>
+        <tr><td class="lbl">Less: Mortgage Payoff</td><td class="neg" id="wa-payoff">—</td></tr>
+        <tr class="sep"><td>Paseo Net Equity</td><td id="wa-net">—</td></tr>
+        <tr><td class="lbl">Total Estate</td><td id="wa-total-estate">—</td></tr>
+        <tr><td class="lbl">50/50 Target Each</td><td id="wa-target">—</td></tr>
+        <tr><td class="lbl">Toby Controls</td><td class="pos" id="wa-toby-controls">—</td></tr>
+        <tr class="tot"><td>Equalization to Toby</td><td class="pos" id="wa-equalization">—</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="disclaimer">Paseo value slider updates command page scenarios in real time.</div>
+</div>
+</div><!-- /walkaway -->
+
+<!-- ═══════════════════ SCENARIOS TAB ═══════════════════ -->
+<div class="panel" id="panel-scenarios">
+<div class="tab-wrap">
+  <div class="slider-group">
+    <div class="slider-label"><span>Paseo Value</span><span class="slider-val" id="sc-paseo-val">—</span></div>
+    <input type="range" id="sc-paseo" min="1400000" max="2000000" step="5000" oninput="onSlider('paseo',+this.value);renderAll()">
+  </div>
+  <div class="slider-group">
+    <div class="slider-label"><span>Spousal Support ($/mo)</span><span class="slider-val" id="sc-support-val">—</span></div>
+    <input type="range" id="sc-support" min="0" max="4000" step="50" oninput="onSlider('ssupport',+this.value);renderAll()">
+  </div>
+  <div class="slider-group">
+    <div class="slider-label"><span>Months to Settlement</span><span class="slider-val" id="sc-months-val">—</span></div>
+    <input type="range" id="sc-months" min="1" max="24" step="1" value="6" oninput="onSlider('settlementMonths',+this.value);renderAll()">
+  </div>
+  <div class="stat-row">
+    <div class="stat"><div class="s-label">Equalization</div><div class="s-value pos" id="sc-eq">—</div><div class="s-sub">Brandy → Toby</div></div>
+    <div class="stat"><div class="s-label">Total Support Paid</div><div class="s-value neg" id="sc-support-total">—</div><div class="s-sub">Cumulative outflow</div></div>
+    <div class="stat"><div class="s-label">Net After Support</div><div class="s-value warn" id="sc-net-after">—</div><div class="s-sub">Effective walkaway</div></div>
+    <div class="stat"><div class="s-label">Monthly Deficit</div><div class="s-value neg" id="sc-deficit">—</div><div class="s-sub">Cash burn / month</div></div>
+  </div>
+  <div class="card">
+    <div class="card-head">Scenario Summary</div>
+    <div class="card-body">
+      <table class="dt">
+        <tr><td class="lbl">Paseo Value</td><td id="sc-s-paseo">—</td></tr>
+        <tr><td class="lbl">Paseo Net Equity</td><td id="sc-s-net">—</td></tr>
+        <tr class="sep"><td>Equalization to Toby</td><td class="pos" id="sc-s-eq">—</td></tr>
+        <tr><td class="lbl">Months of Support</td><td id="sc-s-months">—</td></tr>
+        <tr><td class="lbl">Total Support Paid</td><td class="neg" id="sc-s-paid">—</td></tr>
+        <tr class="tot"><td>NET WALKAWAY</td><td class="pos" id="sc-s-walkaway">—</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="notice"><strong>Cost of delay:</strong> Every month adds support paid + cash deficit burned. Total monthly cost: <strong id="sc-delay-cost">—</strong></div>
+  <div class="card">
+    <div class="card-head">Cost of Delay — Cumulative</div>
+    <div class="card-body">
+      <div class="chart-label">Total cost of each additional month of delay</div>
+      <div class="chart-wrap"><canvas id="sc-delay-chart"></canvas></div>
+      <div class="chart-legend">
+        <span class="legend-item"><span class="legend-line red-line"></span>Cumulative delay cost</span>
+        <span class="legend-item"><span class="legend-line accent-line"></span>Net walkaway remaining</span>
+        <span class="legend-item"><span class="legend-dot amber-dot"></span>Current scenario (<span id="sc-legend-mo">6</span> mo)</span>
+      </div>
+    </div>
+  </div>
+</div>
+</div><!-- /scenarios -->
+
+<!-- ═══════════════════ CASH FLOW TAB ═══════════════════ -->
+<div class="panel" id="panel-cashflow">
+<div class="tab-wrap">
+  <div class="card">
+    <div class="card-head">Monthly Cash Flow — Current</div>
+    <div class="card-body">
+      <div class="section-label">Income</div>
+      <table class="dt">
+        <tr><td class="lbl">W2 Gross Income</td><td class="pos">$6,667</td></tr>
+        <tr><td class="lbl">Taxes &amp; Withholding</td><td class="neg">-$1,161</td></tr>
+        <tr class="sep"><td>W2 Net Take-Home</td><td class="pos" id="cf-w2-top">—</td></tr>
+      </table>
+      <div class="section-label" style="margin-top:14px">Fixed Expenses</div>
+      <table class="dt">
+        <tr><td class="lbl">RKD Mortgage</td><td id="cf-rkdmort" class="neg"></td></tr>
+        <tr><td class="lbl">Spousal Support</td><td id="cf-support" class="neg"></td></tr>
+        <tr><td class="lbl">Auto Insurance</td><td id="cf-autoins" class="neg"></td></tr>
+        <tr><td class="lbl">Blake Support (avg)</td><td id="cf-blake" class="neg"></td></tr>
+        <tr class="sep"><td>Fixed Subtotal</td><td class="neg" id="cf-fixed-sub"></td></tr>
+      </table>
+      <div class="section-label" style="margin-top:14px">Variable Expenses (83-day avg)</div>
+      <table class="dt">
+        <tr><td class="lbl">Groceries</td><td id="cf-groc" class="neg"></td></tr>
+        <tr><td class="lbl">Shopping</td><td id="cf-shop" class="neg"></td></tr>
+        <tr><td class="lbl">Travel / REI</td><td id="cf-travel" class="neg"></td></tr>
+        <tr><td class="lbl">Home Improvement</td><td id="cf-home" class="neg"></td></tr>
+        <tr><td class="lbl">Vehicle Gas (incl Food 4 Less)</td><td id="cf-gas" class="neg"></td></tr>
+        <tr><td class="lbl">Utilities</td><td id="cf-util" class="neg"></td></tr>
+        <tr><td class="lbl">Phone (Verizon)</td><td id="cf-phone" class="neg"></td></tr>
+        <tr><td class="lbl">Clothing</td><td id="cf-cloth" class="neg"></td></tr>
+        <tr><td class="lbl">Dining Out</td><td id="cf-dining" class="neg"></td></tr>
+        <tr><td class="lbl">Entertainment</td><td id="cf-ent" class="neg"></td></tr>
+        <tr><td class="lbl">Auto Maintenance</td><td id="cf-autom" class="neg"></td></tr>
+        <tr><td class="lbl">Medical</td><td id="cf-med" class="neg"></td></tr>
+        <tr><td class="lbl">Misc / Personal</td><td id="cf-misc" class="neg"></td></tr>
+        <tr class="sep"><td>Variable Subtotal</td><td class="neg" id="cf-var-sub"></td></tr>
+      </table>
+      <hr style="border:none;border-top:1px solid var(--border);margin:12px 0">
+      <table class="dt">
+        <tr><td class="lbl">W2 Net Income</td><td id="cf-w2" class="pos"></td></tr>
+        <tr class="tot"><td>Monthly Deficit</td><td class="neg" id="cf-p1-deficit"></td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head">Expense Breakdown</div>
+    <div class="card-body">
+      <div class="bar-chart" id="cf-bar-chart"></div>
+    </div>
+  </div>
+</div>
+</div><!-- /cashflow -->
+
+
+
+<!-- ═══════════════════ PENDING TAB ═══════════════════ -->
+<div class="panel" id="panel-pending">
+<div class="tab-wrap">
+  <div class="card">
+    <div class="card-head" style="color:var(--red)">Urgent / Active</div>
+    <div class="card-body">
+      <div class="checklist-item"><div class="check-dot" style="background:var(--red)"></div><div class="check-text"><strong>OSC — Order to Show Cause</strong><small>Filed · Hearing Apr 14 · Target: concrete listing order</small></div></div>
+      <div class="checklist-item"><div class="check-dot" style="background:var(--red)"></div><div class="check-text"><strong>Declaration in Support of OSC</strong><small>Filed by James · Paseo depletion argument</small></div></div>
+      <div class="checklist-item"><div class="check-dot" style="background:var(--amber)"></div><div class="check-text"><strong>FL-150 Income &amp; Expense Declaration</strong><small>In progress · File before Apr 14</small></div></div>
+      <div class="checklist-item"><div class="check-dot" style="background:var(--amber)"></div><div class="check-text"><strong>Support Modification Motion</strong><small>Brandy ~$3K gross/mo · FA §3651 · File immediately</small></div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head">Evidence &amp; Leverage</div>
+    <div class="card-body">
+      <div class="checklist-item"><div class="check-dot" style="background:var(--red)"></div><div class="check-text"><strong>Unauthorized ACH — Chase Business</strong><small>Document and preserve for hearing</small></div></div>
+      <div class="checklist-item"><div class="check-dot" style="background:var(--amber)"></div><div class="check-text"><strong>Utility Delinquencies at Paseo</strong><small>Pull statements — supports listing urgency</small></div></div>
+      <div class="checklist-item"><div class="check-dot" style="background:var(--accent)"></div><div class="check-text"><strong>Emancipation — Apr 17</strong><small>3 days after hearing · jurisdiction window closes</small></div></div>
+      <div class="checklist-item"><div class="check-dot" style="background:var(--dim)"></div><div class="check-text"><strong>Father's $4,750/mo Mortgage Payments</strong><small>Income attribution argument for support mod</small></div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head">Strategy Notes</div>
+    <div class="card-body">
+      <div class="checklist-item"><div class="check-dot" style="background:var(--green)"></div><div class="check-text"><strong>Remain silent before Apr 14</strong><small>No informal communications about settlement</small></div></div>
+      <div class="checklist-item"><div class="check-dot" style="background:var(--green)"></div><div class="check-text"><strong>Request concrete listing order</strong><small>Not an open-ended delay — specific date and agent</small></div></div>
+      <div class="checklist-item"><div class="check-dot" style="background:var(--dim)"></div><div class="check-text"><strong>Judge Meyerowitz profile</strong><small>Former prosecutor · empathetic but law-driven · relatively new to bench</small></div></div>
+    </div>
+  </div>
+</div>
+</div><!-- /pending -->
+
+<!-- ═══════════════════ BUSINESS TAB ═══════════════════ -->
+<div class="panel" id="panel-business">
+<div class="tab-wrap">
+
+  <div class="stat-row">
+    <div class="stat"><div class="s-label">2025 Revenue</div><div class="s-value pos">$322,230</div><div class="s-sub">Gross sales net of refunds</div></div>
+    <div class="stat"><div class="s-label">2025 Expenses</div><div class="s-value neg">$325,049</div><div class="s-sub">Total operating expenses</div></div>
+    <div class="stat"><div class="s-label">Net Income</div><div class="s-value neg">-$2,819</div><div class="s-sub">Near breakeven</div></div>
+    <div class="stat"><div class="s-label">Cash on Hand</div><div class="s-value warn">$7,474</div><div class="s-sub">Dec 31, 2025</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">2025 Profit & Loss — BNT Erosion Control dba Super Agents Live <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--dim)">Jan–Dec 2025 · Accrual</span></div>
+    <div class="card-body">
+      <div class="section-label">Income</div>
+      <table class="dt">
+        <tr><td class="lbl">Gross Sales</td><td class="pos">$349,366</td></tr>
+        <tr><td class="lbl">Refunds</td><td class="neg">-$27,136</td></tr>
+        <tr class="sep"><td>Total Income</td><td class="pos">$322,230</td></tr>
+      </table>
+      <div class="section-label" style="margin-top:16px">Expenses</div>
+      <table class="dt">
+        <tr><td class="lbl">Advertising &amp; Promotion</td><td class="neg">$272,411</td></tr>
+        <tr><td class="lbl">Utilities</td><td class="neg">$14,044</td></tr>
+        <tr><td class="lbl">Insurance</td><td class="neg">$10,187</td></tr>
+        <tr><td class="lbl">Repairs &amp; Maintenance</td><td class="neg">$9,303</td></tr>
+        <tr><td class="lbl">Travel</td><td class="neg">$4,508</td></tr>
+        <tr><td class="lbl">Automobile</td><td class="neg">$4,065</td></tr>
+        <tr><td class="lbl">Medical</td><td class="neg">$1,564</td></tr>
+        <tr><td class="lbl">Meals &amp; Entertainment</td><td class="neg">$1,415</td></tr>
+        <tr><td class="lbl">Professional Fees</td><td class="neg">$1,886</td></tr>
+        <tr><td class="lbl">Computer &amp; Internet</td><td class="neg">$2,798</td></tr>
+        <tr><td class="lbl">Office Supplies</td><td class="neg">$2,202</td></tr>
+        <tr><td class="lbl">Telephone</td><td class="neg">$2,389</td></tr>
+        <tr><td class="lbl">Licenses / Permits</td><td class="neg">$846</td></tr>
+        <tr><td class="lbl">Dues &amp; Subscriptions</td><td class="neg">$707</td></tr>
+        <tr><td class="lbl">Bank Charges</td><td class="neg">$390</td></tr>
+        <tr><td class="lbl">Shipping</td><td class="neg">$37</td></tr>
+        <tr><td class="lbl">Postage</td><td class="neg">$1</td></tr>
+        <tr><td class="lbl">Legal Expenses</td><td class="neg">$606</td></tr>
+        <tr><td class="lbl">Amex Promotional Discounts</td><td class="pos">-$3,082</td></tr>
+        <tr><td class="lbl">Early Payment Discounts</td><td class="pos">-$1,229</td></tr>
+        <tr class="sep"><td>Total Expenses</td><td class="neg">$325,049</td></tr>
+      </table>
+      <div style="margin-top:12px;padding:12px 0;border-top:2px solid var(--accent);display:flex;justify-content:space-between;align-items:center">
+        <span style="font-weight:700;font-size:13px;color:var(--accent)">Net Income</span>
+        <span style="font-family:var(--mono);font-size:13px;font-weight:700;color:var(--red)">-$2,819</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">Balance Sheet — Dec 31, 2025</div>
+    <div class="card-body">
+      <div class="section-label">Assets</div>
+      <table class="dt">
+        <tr><td class="lbl">Chase Business Checking #8195</td><td>$4,496</td></tr>
+        <tr><td class="lbl">Petty Cash</td><td>$2,978</td></tr>
+        <tr class="sep"><td>Total Assets</td><td class="pos">$7,474</td></tr>
+      </table>
+      <div class="section-label" style="margin-top:16px">Liabilities</div>
+      <table class="dt">
+        <tr><td class="lbl">Amex Cards (net credit balance)</td><td class="pos">$4,597 cr</td></tr>
+        <tr class="sep"><td>Total Liabilities</td><td class="pos">$4,597 cr</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="notice" style="margin-top:4px"><strong>Context for hearing:</strong> BNT operated near breakeven in 2025. Advertising &amp; Promotion ($272K) represents the primary cost driver — 84% of total expenses. Owner draws of $358K reflect Toby's personal compensation taken from the business over the year.</div>
+
+</div>
+</div><!-- /business -->
+
+
+
+<!-- ═══════════════════ SETTINGS TAB ═══════════════════ -->
+<div class="panel" id="panel-settings">
+<div class="tab-wrap">
+  <div class="card">
+    <div class="card-head">Estate Values</div>
+    <div class="card-body">
+      <div class="settings-section">
+        <h3>Paseo Property</h3>
+        <div class="settings-grid">
+          <div class="s-field"><label>Paseo Gross Value</label><input type="number" id="set-paseo" value="1805000" step="5000"></div>
+          <div class="s-field"><label>Mortgage Balance</label><input type="number" id="set-mort" value="336438" step="1000"></div>
+          <div class="s-field"><label>Monthly Interest (stmt)</label><input type="number" id="set-int" value="1462" step="10"></div>
+          <div class="s-field"><label>Taxes + Insurance /mo</label><input type="number" id="set-escrow" value="1315" step="10"></div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <h3>Toby's Assets</h3>
+        <div class="settings-grid">
+          <div class="s-field"><label>RKD Gross Value</label><input type="number" id="set-rkd-gross" value="761000" step="5000"></div>
+          <div class="s-field"><label>RKD Net Equity</label><input type="number" id="set-rkd" value="708164" step="1000"></div>
+          <div class="s-field"><label>TSLA (FMV total)</label><input type="number" id="set-tsla" value="72951" step="100"></div>
+          <div class="s-field"><label>META (FMV total)</label><input type="number" id="set-meta" value="18201" step="100"></div>
+          <div class="s-field"><label>Life Insurance CSV</label><input type="number" id="set-life" value="239000" step="1000"></div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <h3>Income &amp; Fixed Expenses</h3>
+        <div class="settings-grid">
+          <div class="s-field"><label>W2 Net Income</label><input type="number" id="set-w2" value="5506" step="100"></div>
+          <div class="s-field"><label>RKD Mortgage</label><input type="number" id="set-rkdmort" value="1642" step="50"></div>
+          <div class="s-field"><label>Spousal Support</label><input type="number" id="set-support" value="2124" step="25"></div>
+          <div class="s-field"><label>Auto Insurance</label><input type="number" id="set-autoins" value="800" step="50"></div>
+          <div class="s-field"><label>Blake</label><input type="number" id="set-blake" value="238" step="10"></div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <h3>Variable Expenses</h3>
+        <div class="settings-grid">
+          <div class="s-field"><label>Groceries</label><input type="number" id="set-groc" value="1536" step="50"></div>
+          <div class="s-field"><label>Shopping</label><input type="number" id="set-shop" value="1259" step="50"></div>
+          <div class="s-field"><label>Travel</label><input type="number" id="set-travel" value="564" step="50"></div>
+          <div class="s-field"><label>Home</label><input type="number" id="set-home" value="338" step="10"></div>
+          <div class="s-field"><label>Gas</label><input type="number" id="set-gas" value="413" step="10"></div>
+          <div class="s-field"><label>Utilities</label><input type="number" id="set-util" value="300" step="10"></div>
+          <div class="s-field"><label>Phone</label><input type="number" id="set-phone" value="136" step="5"></div>
+          <div class="s-field"><label>Clothing</label><input type="number" id="set-cloth" value="113" step="5"></div>
+          <div class="s-field"><label>Dining</label><input type="number" id="set-dining" value="95" step="5"></div>
+          <div class="s-field"><label>Entertainment</label><input type="number" id="set-ent" value="58" step="5"></div>
+          <div class="s-field"><label>Auto Maintenance</label><input type="number" id="set-autom" value="37" step="5"></div>
+          <div class="s-field"><label>Medical</label><input type="number" id="set-med" value="87" step="5"></div>
+          <div class="s-field"><label>Misc</label><input type="number" id="set-misc" value="50" step="5"></div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <h3>Timing</h3>
+        <div class="settings-grid">
+          <div class="s-field"><label>Months Support Paid So Far</label><input type="number" id="set-paid" value="2" step="1"></div>
+        </div>
+      </div>
+      <button class="apply-btn" onclick="applySettings()">Apply &amp; Recalculate</button>
+    </div>
+  </div>
+  <div class="disclaimer">Changes update all tabs and the command page in real time after clicking Apply.</div>
+</div>
+</div><!-- /settings -->
+
+</main>
+</div><!-- /app-body -->
+
+<!-- MOBILE BOTTOM NAV -->
+<nav class="bottom-nav">
+  <div class="bn-inner">
+    <button class="bn-btn active" onclick="showPanel('command',this)">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="2" width="7" height="7" rx="1.5"/><rect x="11" y="2" width="7" height="7" rx="1.5"/><rect x="2" y="11" width="7" height="7" rx="1.5"/><rect x="11" y="11" width="7" height="7" rx="1.5"/></svg>
+      <span class="bn-label">Home</span>
+    </button>
+    <button class="bn-btn" onclick="showPanel('estate',this)">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M10 2L2 8v10h5v-5h6v5h5V8z"/></svg>
+      <span class="bn-label">Estate</span>
+    </button>
+    <button class="bn-btn" onclick="showPanel('walkaway',this)">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 10h14M13 5l5 5-5 5"/></svg>
+      <span class="bn-label">Walkaway</span>
+    </button>
+    <button class="bn-btn" onclick="showPanel('pending',this)" style="position:relative">
+      <div class="bn-badge"></div>
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="3" width="14" height="14" rx="2"/><path d="M7 7h6M7 10h6M7 13h4"/></svg>
+      <span class="bn-label">Pending</span>
+    </button>
+    <button class="bn-btn" onclick="showPanel('settings',this)">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="10" cy="10" r="2.5"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.2 4.2l1.4 1.4M14.4 14.4l1.4 1.4M4.2 15.8l1.4-1.4M14.4 5.6l1.4-1.4"/></svg>
+      <span class="bn-label">Settings</span>
+    </button>
+  </div>
+</nav>
+
+<!-- ═══════════════════ JAVASCRIPT ═══════════════════ -->
+<script>
+/* ── CENTRAL DATA OBJECT — exact values from v9 ── */
+const D = {
+  // Toby assets (individual line items)
+  rkd:708164, rkdGross:761000, rkdPayoff:52836, tsla:72951, meta:18201, life:239000,
+  p911:36500, ford:4705, p944:17000, drz:3200,
+  p944s:1500, odyssey:400, pw50:600, trailer:100, sports:2000,
+  // Brandy assets
+  paseo:1805000, paseoMort:336438, furn:50000, cayenne:3000,
+  // Phase 1 fixed expenses
+  rkdMort:1642, ssupport:2124, autoIns:800, blake:238,
+  // Phase 1 variable expenses
+  groc:1536, shop:1259, travel:564, home:338, gas:413,
+  util:300, phone:136, cloth:113, dining:95, ent:58,
+  autom:37, med:87, misc:50,
+  // Income
+  w2:5506,
+  // Tax
+  tslaBasis:150, metaBasis:250, capGainsRate:15,
+  // Timing
+  settlementMonths:6,
+  sellingCosts:6,   // default selling cost %
+  sellingCostsPct:5, // command page scenario uses 5%
+  // Depletion — exact from mortgage statement
+  paseoInterestAmt:1462, paseoEscrowAmt:1315, monthsPaid:2,
+  hearingDate: new Date('2026-04-14T09:00:00'),
+};
+
+/* ── DERIVED — exact v9 logic ── */
+function derived() {
+  // Assets
+  const tobyAssets  = D.rkd+D.tsla+D.meta+D.life+D.p911+D.ford+D.p944+D.drz+D.p944s+D.odyssey+D.pw50+D.trailer+D.sports;
+  const paseoNet    = D.paseo - D.paseoMort;
+  const brandyAssets= paseoNet + D.furn + D.cayenne;
+  const totalEstate = tobyAssets + brandyAssets;
+  const target      = totalEstate / 2;
+  const equalization= target - tobyAssets;   // positive = Brandy owes Toby
+  const imbalance   = brandyAssets - tobyAssets;
+  const tobyPct     = Math.round((tobyAssets / totalEstate) * 100);
+  const brandyPct   = 100 - tobyPct;
+
+  // Cash flow (Phase 1)
+  const fixedTotal  = D.rkdMort + D.ssupport + D.autoIns + D.blake;
+  const varTotal    = D.groc+D.shop+D.travel+D.home+D.gas+D.util+D.phone+D.cloth+D.dining+D.ent+D.autom+D.med+D.misc;
+  const expenses    = fixedTotal + varTotal;
+  const p1Deficit   = D.w2 - expenses;   // negative = deficit
+
+  // Depletion — exact mortgage statement figures
+  const paseoInterest = D.paseoInterestAmt;
+  const paseoEscrow   = D.paseoEscrowAmt;
+  const paseoCarry    = paseoInterest + paseoEscrow;
+  const estateBurn    = Math.abs(Math.min(p1Deficit, 0)) + paseoCarry;
+  const eqMonths      = equalization / estateBurn;
+  const eqRemaining   = equalization - estateBurn * D.monthsPaid;
+
+  // Walkaway
+  const sellingCostAmt  = D.paseo * D.sellingCosts / 100;
+  const waEq            = equalization - sellingCostAmt / 2;
+  // Command page 5% scenario
+  const sellCosts5      = D.paseo * D.sellingCostsPct / 100;
+  const eqSale5         = equalization - sellCosts5 / 2;
+
+  // Scenarios
+  const burnPerMo       = estateBurn + D.ssupport;
+  const scSupportTotal  = D.ssupport * D.settlementMonths;
+  const scWalkaway      = equalization - scSupportTotal;
+
+  // Support mod
+  const smSavings = 2124 - D.ssupport;
+
+  return {
+    tobyAssets, paseoNet, brandyAssets, totalEstate, target,
+    equalization, imbalance, tobyPct, brandyPct,
+    fixedTotal, varTotal, expenses, p1Deficit,
+    paseoInterest, paseoEscrow, paseoCarry, estateBurn, eqMonths, eqRemaining,
+    sellingCostAmt, waEq, sellCosts5, eqSale5,
+    burnPerMo, scSupportTotal, scWalkaway, smSavings,
+  };
+}
+
+/* ── FORMATTERS ── */
+function fmt(n) {
+  const abs = Math.abs(Math.round(n));
+  return (n < 0 ? '-$' : '$') + abs.toLocaleString('en-US');
+}
+function set(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
+
+/* ── RENDER ALL ── */
+function renderAll() {
+  const c = derived();
+  renderCommand(c);
+  renderEstate(c);
+  renderWalkaway(c);
+  renderScenarios(c);
+  renderCashFlow(c);
+  syncSliders(c);
+  drawDepletionChart(c);
+}
+
+/* ── COMMAND PAGE ── */
+function renderCommand(c) {
+  // Position blocks
+  set('cmd-toby-val',    fmt(c.tobyAssets));
+  set('cmd-toby-pct',    c.tobyPct + '% of total estate');
+  set('cmd-brandy-val',  fmt(c.brandyAssets));
+  set('cmd-brandy-pct',  c.brandyPct + '% of total estate');
+  set('cmd-toby-total',  fmt(c.tobyAssets));
+  set('cmd-brandy-total',fmt(c.brandyAssets));
+  set('cmd-target',      fmt(c.target));
+  set('cmd-rkd',         fmt(D.rkd));
+  set('cmd-stocks',      fmt(D.tsla));
+  set('cmd-meta',        fmt(D.meta));
+  set('cmd-life',        fmt(D.life));
+  set('cmd-vehicles',    fmt(D.p911+D.ford+D.p944+D.drz+D.p944s+D.odyssey+D.pw50));
+  set('cmd-sports',      fmt(D.trailer+D.sports));
+  set('cmd-paseo-net',   fmt(c.paseoNet));
+  set('cmd-furn',        fmt(D.furn));
+  set('cmd-cayenne',     fmt(D.cayenne));
+  set('cmd-income-disp', D.w2.toLocaleString());
+  // Split bar
+  const tobyBar = document.getElementById('cmd-split-toby');
+  if (tobyBar) { tobyBar.style.width = c.tobyPct + '%'; tobyBar.textContent = 'Toby ' + c.tobyPct + '%'; }
+  const brandyBar = document.getElementById('cmd-split-brandy');
+  if (brandyBar) brandyBar.textContent = 'Brandy ' + c.brandyPct + '%';
+
+  // Burn
+  set('burn-toby',  fmt(c.p1Deficit) + '/mo');
+  set('burn-paseo', fmt(-c.paseoCarry) + '/mo');
+  set('burn-total', fmt(-c.estateBurn) + '/mo');
+  set('burn-judge', fmt(c.estateBurn) + '/mo');
+
+  // Equalization hero
+  set('cmd-eq-val', fmt(c.equalization));
+  set('cmd-eq-sub', 'Half the ' + fmt(c.imbalance) + ' gap · 50/50 target ' + fmt(c.target));
+  set('eq-burns', fmt(-c.estateBurn) + '/mo');
+  set('eq-gone',  c.eqMonths.toFixed(1) + ' mo');
+
+  // 3 scenario lines under equalization
+  set('sc-paseo-val-label', fmt(D.paseo) + ' valuation');
+  set('sc-gap-eq',    fmt(c.equalization));
+  set('sc-gap-total', fmt(c.imbalance) + ' gap');
+  set('sc-sale-cost-label', fmt(c.sellCosts5) + ' selling costs (5%)');
+  set('sc-sale-net',  fmt(c.eqSale5));
+  set('sc-monthly',   fmt(-c.burnPerMo) + '/mo');
+
+  // Depletion KPIs
+  set('dep-monthly',   fmt(-c.estateBurn));
+  set('dep-annual',    fmt(-c.estateBurn * 12));
+  set('dep-consumed',  c.eqMonths.toFixed(1) + ' mo');
+  set('dep-remaining', fmt(c.eqRemaining));
+  set('dep-paid-mo',   D.monthsPaid);
+  set('dep-today-mo',  D.monthsPaid);
+
+  // Depletion rows
+  set('dep-toby-def',  fmt(c.p1Deficit));
+  set('dep-paseo-int', fmt(-D.paseoInterestAmt));
+  set('dep-paseo-esc', fmt(-D.paseoEscrowAmt));
+  set('dep-total',     fmt(-c.estateBurn));
+
+  // Judicial argument
+  set('dep-judicial-burn',   fmt(c.estateBurn));
+  set('dep-judicial-detail', fmt(D.paseoInterestAmt) + '/mo');
+  set('dep-judicial-escrow', fmt(D.paseoEscrowAmt));
+  set('dep-judicial-toby',   fmt(c.p1Deficit));
+}
+
+/* ── ESTATE TAB ── */
+function renderEstate(c) {
+  // Stat row
+  set('es-toby-controls',    fmt(c.tobyAssets));
+  set('es-brandy-controls',  fmt(c.brandyAssets));
+  set('es-total',            fmt(c.totalEstate));
+  set('es-target',           fmt(c.target));
+  // Imbalance card
+  set('es-b-controls-detail',fmt(c.brandyAssets));
+  set('es-t-controls-detail',fmt(c.tobyAssets));
+  set('es-imbalance',        fmt(c.imbalance));
+  set('es-imbalance-badge',  fmt(c.imbalance) + ' advantage to Brandy');
+  set('es-eq',               fmt(c.equalization));
+  // Toby asset totals
+  set('es-toby-total',       fmt(c.tobyAssets));
+  set('es-toby-sum',         fmt(c.tobyAssets));
+  // Every Toby line item from D
+  set('es-rkd',     fmt(D.rkd));
+  set('es-rkd-gross', fmt(D.rkdGross));
+  set('es-rkd-mort',  fmt(-D.rkdPayoff));
+  set('es-tsla',    fmt(D.tsla));
+  set('es-meta',    fmt(D.meta));
+  set('es-life',    fmt(D.life));
+  set('es-p911',    fmt(D.p911));
+  set('es-p944',    fmt(D.p944));
+  set('es-p944s',   fmt(D.p944s));
+  set('es-ford',    fmt(D.ford));
+  set('es-flatbed', 'Gifted to Hudson');
+  set('es-odyssey', fmt(D.odyssey));
+  set('es-pw50',    fmt(D.pw50));
+  set('es-drz',     fmt(D.drz));
+  set('es-trailer', fmt(D.trailer));
+  set('es-sports',  fmt(D.sports));
+  // Brandy
+  set('es-brandy-total',     fmt(c.brandyAssets));
+  set('es-brandy-sum',       fmt(c.brandyAssets));
+  set('es-paseo-gross',      fmt(D.paseo));
+  set('es-paseo-mort',       fmt(-D.paseoMort));
+  set('es-paseo-net',        fmt(c.paseoNet));
+  set('es-furn',             fmt(D.furn));
+  set('es-cayenne',          fmt(D.cayenne));
+}
+
+/* ── WALKAWAY TAB ── */
+let waMode = 'buyout';
+function setWaMode(m) {
+  waMode = m;
+  document.getElementById('wa-mode-buyout').classList.toggle('active', m === 'buyout');
+  document.getElementById('wa-mode-sale').classList.toggle('active', m === 'sale');
+  document.getElementById('wa-costs-group').style.display = m === 'sale' ? 'block' : 'none';
+  document.getElementById('wa-selling-row').style.display = m === 'sale' ? '' : 'none';
+  set('wa-mode-label', m === 'buyout' ? 'Buyout Mode' : 'Sale Mode');
+  renderAll();
+}
+
+function renderWalkaway(c) {
+  set('wa-paseo-val', fmt(D.paseo));
+  set('wa-costs-val', D.sellingCosts.toFixed(1) + '%');
+  set('wa-mort-val',  fmt(D.paseoMort));
+  set('wa-gross',     fmt(D.paseo));
+  set('wa-selling',   waMode === 'sale' ? fmt(-c.sellingCostAmt) : '—');
+  set('wa-payoff',    fmt(-D.paseoMort));
+  const waNetEquity = waMode === 'sale'
+    ? D.paseo - c.sellingCostAmt - D.paseoMort
+    : D.paseo - D.paseoMort;
+  set('wa-net',       fmt(waNetEquity));
+  // Recalc estate and eq based on mode
+  const waEstateTotal = c.tobyAssets + waNetEquity + D.furn + D.cayenne;
+  const waHalf        = waEstateTotal / 2;
+  const waFinalEq     = waHalf - c.tobyAssets;
+  set('wa-total-estate', fmt(waEstateTotal));
+  set('wa-target',       fmt(waHalf));
+  set('wa-toby-controls', fmt(c.tobyAssets));
+  set('wa-equalization', fmt(waFinalEq));
+  const el = document.getElementById('wa-paseo'); if (el) el.value = D.paseo;
+  const em = document.getElementById('wa-mort');  if (em) em.value = D.paseoMort;
+  const ec = document.getElementById('wa-costs'); if (ec) ec.value = D.sellingCosts;
+}
+
+/* ── SCENARIOS TAB ── */
+function renderScenarios(c) {
+  const monthlyCost = c.burnPerMo;
+  set('sc-paseo-val',    fmt(D.paseo));
+  set('sc-support-val',  '$' + D.ssupport.toLocaleString());
+  set('sc-months-val',   D.settlementMonths + ' mo');
+  set('sc-eq',           fmt(c.equalization));
+  set('sc-support-total',fmt(c.scSupportTotal));
+  set('sc-net-after',    fmt(c.scWalkaway));
+  set('sc-deficit',      fmt(c.p1Deficit));
+  set('sc-s-paseo',      fmt(D.paseo));
+  set('sc-s-net',        fmt(c.paseoNet));
+  set('sc-s-eq',         fmt(c.equalization));
+  set('sc-s-months',     D.settlementMonths);
+  set('sc-s-paid',       fmt(c.scSupportTotal));
+  set('sc-s-walkaway',   fmt(c.scWalkaway));
+  set('sc-delay-cost',   fmt(monthlyCost) + '/mo');
+  set('sc-legend-mo',    D.settlementMonths);
+  const ep = document.getElementById('sc-paseo');  if (ep) ep.value = D.paseo;
+  const es = document.getElementById('sc-support'); if (es) es.value = D.ssupport;
+  const em = document.getElementById('sc-months');  if (em) em.value = D.settlementMonths;
+  setTimeout(() => drawDelayChart(c), 20);
+}
+
+/* ── CASH FLOW TAB ── */
+function renderCashFlow(c) {
+  // Fixed
+  set('cf-rkdmort',   fmt(-D.rkdMort));
+  set('cf-support',   fmt(-D.ssupport));
+  set('cf-autoins',   fmt(-D.autoIns));
+  set('cf-blake',     fmt(-D.blake));
+  set('cf-fixed-sub', fmt(-c.fixedTotal));
+  // Variable
+  set('cf-groc',   fmt(-D.groc));
+  set('cf-shop',   fmt(-D.shop));
+  set('cf-travel', fmt(-D.travel));
+  set('cf-home',   fmt(-D.home));
+  set('cf-gas',    fmt(-D.gas));
+  set('cf-util',   fmt(-D.util));
+  set('cf-phone',  fmt(-D.phone));
+  set('cf-cloth',  fmt(-D.cloth));
+  set('cf-dining', fmt(-D.dining));
+  set('cf-ent',    fmt(-D.ent));
+  set('cf-autom',  fmt(-D.autom));
+  set('cf-med',    fmt(-D.med));
+  set('cf-misc',   fmt(-D.misc));
+  set('cf-var-sub',fmt(-c.varTotal));
+  // Income + deficit
+  set('cf-w2-top',     fmt(D.w2));
+  set('cf-w2',         fmt(D.w2));
+  set('cf-p1-deficit',fmt(c.p1Deficit));
+  // Bar chart
+  const items = [
+    { name:'RKD Mort',  val:D.rkdMort },
+    { name:'Support',   val:D.ssupport },
+    { name:'Auto ins',  val:D.autoIns },
+    { name:'Blake',     val:D.blake },
+    { name:'Groceries', val:D.groc },
+    { name:'Shopping',  val:D.shop },
+    { name:'Travel',    val:D.travel },
+    { name:'Gas',       val:D.gas },
+    { name:'Home',      val:D.home },
+    { name:'Utilities', val:D.util },
+    { name:'Phone',     val:D.phone },
+    { name:'Clothing',  val:D.cloth },
+    { name:'Dining',    val:D.dining },
+    { name:'Ent',       val:D.ent },
+    { name:'Auto maint',val:D.autom },
+    { name:'Medical',   val:D.med },
+    { name:'Misc',      val:D.misc },
+  ];
+  const maxVal = Math.max(...items.map(i => i.val));
+  const el = document.getElementById('cf-bar-chart');
+  if (el) {
+    el.innerHTML = items.map(i => `
+      <div class="bar-row">
+        <span class="bar-name">${i.name}</span>
+        <div class="bar-track"><div class="bar-fill" style="width:${Math.round(i.val/maxVal*100)}%;background:var(--red-bar);border:1px solid rgba(184,58,58,.3)"></div></div>
+        <span class="bar-val">${fmt(i.val)}</span>
+      </div>`).join('');
+  }
+}
+
+/* ── SLIDER SYNC ── */
+function syncSliders(c) {
+  const el = (id) => document.getElementById(id);
+  if (el('wa-paseo')) el('wa-paseo').value = D.paseo;
+  if (el('wa-mort'))  el('wa-mort').value  = D.paseoMort;
+  if (el('wa-costs')) el('wa-costs').value = D.sellingCosts;
+  if (el('sc-paseo')) el('sc-paseo').value = D.paseo;
+  if (el('sc-support')) el('sc-support').value = D.ssupport;
+  if (el('sc-months'))  el('sc-months').value  = D.settlementMonths;
+}
+
+function onSlider(key, val) { D[key] = val; renderAll(); }
+
+/* ── SETTINGS ── */
+function applySettings() {
+  const r = id => { const el = document.getElementById(id); return el ? (+el.value || 0) : 0; };
+  D.paseo          = r('set-paseo');
+  D.paseoMort      = r('set-mort');
+  D.paseoInterestAmt = r('set-int');
+  D.paseoEscrowAmt   = r('set-escrow');
+  D.rkdGross       = r('set-rkd-gross');
+  D.rkd            = r('set-rkd');
+  D.tsla           = r('set-tsla');
+  D.meta           = r('set-meta');
+  D.life           = r('set-life');
+  D.w2             = r('set-w2');
+  D.rkdMort        = r('set-rkdmort');
+  D.ssupport       = r('set-support');
+  D.autoIns        = r('set-autoins');
+  D.blake          = r('set-blake');
+  D.groc           = r('set-groc');
+  D.shop           = r('set-shop');
+  D.travel         = r('set-travel');
+  D.home           = r('set-home');
+  D.gas            = r('set-gas');
+  D.util           = r('set-util');
+  D.phone          = r('set-phone');
+  D.cloth          = r('set-cloth');
+  D.dining         = r('set-dining');
+  D.ent            = r('set-ent');
+  D.autom          = r('set-autom');
+  D.med            = r('set-med');
+  D.misc           = r('set-misc');
+  D.monthsPaid     = r('set-paid');
+  renderAll();
+  const btn = document.querySelector('.apply-btn');
+  if (btn) { btn.textContent = '✓ Applied!'; setTimeout(() => { btn.textContent = 'Apply & Recalculate'; }, 1800); }
+}
+
+/* ── DEPLETION CHART ── */
+function drawDepletionChart(c) {
+  const canvas = document.getElementById('dep-chart');
+  if (!canvas) return;
+  const W = canvas.parentElement.clientWidth || 600;
+  const H = 200;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, W, H);
+
+  const months = 24;
+  const pad = { top:16, right:16, bottom:28, left:52 };
+  const cW = W - pad.left - pad.right;
+  const cH = H - pad.top - pad.bottom;
+
+  const eqLine = [], burnLine = [];
+  for (let m = 0; m <= months; m++) {
+    eqLine.push(Math.max(0, c.equalization - m * c.estateBurn));
+    burnLine.push(m * c.estateBurn);
+  }
+  const maxV = Math.max(c.equalization, burnLine[months]) || 1;
+  function xP(m) { return pad.left + (m / months) * cW; }
+  function yP(v) { return pad.top + cH - (v / maxV) * cH; }
+
+  // Grid
+  ctx.setLineDash([2,4]); ctx.strokeStyle='rgba(160,154,144,.25)'; ctx.lineWidth=0.5;
+  for (let i=0;i<=4;i++) { const y=pad.top+(cH/4)*i; ctx.beginPath();ctx.moveTo(pad.left,y);ctx.lineTo(pad.left+cW,y);ctx.stroke(); }
+  ctx.setLineDash([]);
+
+  // Burn fill + line
+  const bg=ctx.createLinearGradient(0,pad.top,0,pad.top+cH);
+  bg.addColorStop(0,'rgba(184,58,58,.18)'); bg.addColorStop(1,'rgba(184,58,58,.02)');
+  ctx.beginPath(); ctx.moveTo(xP(0),yP(0));
+  burnLine.forEach((v,m)=>ctx.lineTo(xP(m),yP(v)));
+  ctx.lineTo(xP(months),yP(0)); ctx.closePath(); ctx.fillStyle=bg; ctx.fill();
+  ctx.beginPath(); burnLine.forEach((v,m)=>m===0?ctx.moveTo(xP(m),yP(v)):ctx.lineTo(xP(m),yP(v)));
+  ctx.strokeStyle='#b83a3a'; ctx.lineWidth=2; ctx.stroke();
+
+  // Eq fill + line
+  const eg=ctx.createLinearGradient(0,pad.top,0,pad.top+cH);
+  eg.addColorStop(0,'rgba(58,110,168,.18)'); eg.addColorStop(1,'rgba(58,110,168,.02)');
+  ctx.beginPath(); ctx.moveTo(xP(0),yP(eqLine[0]));
+  eqLine.forEach((v,m)=>ctx.lineTo(xP(m),yP(v)));
+  ctx.lineTo(xP(months),yP(0)); ctx.lineTo(xP(0),yP(0)); ctx.closePath(); ctx.fillStyle=eg; ctx.fill();
+  ctx.beginPath(); eqLine.forEach((v,m)=>m===0?ctx.moveTo(xP(m),yP(v)):ctx.lineTo(xP(m),yP(v)));
+  ctx.strokeStyle='#3a6ea8'; ctx.lineWidth=2; ctx.stroke();
+
+  // Today dot
+  const todayEq = Math.max(0, c.equalization - D.monthsPaid * c.estateBurn);
+  ctx.beginPath(); ctx.arc(xP(D.monthsPaid),yP(todayEq),5,0,Math.PI*2);
+  ctx.fillStyle='#8a5c00'; ctx.fill();
+
+  // Labels
+  ctx.fillStyle='#a09a90'; ctx.font='9px DM Mono,monospace'; ctx.textAlign='center';
+  [0,6,12,18,24].forEach(m=>ctx.fillText('mo '+m,xP(m),H-pad.bottom+14));
+  ctx.textAlign='right';
+  for(let i=0;i<=4;i++){
+    const v=(maxV/4)*i;
+    ctx.fillText(v>=1000?'$'+Math.round(v/1000)+'K':'$'+Math.round(v),pad.left-4,yP(v)+3);
+  }
+}
+
+/* ── DELAY CHART ── */
+function drawDelayChart(c) {
+  const canvas = document.getElementById('sc-delay-chart');
+  if (!canvas) return;
+  const W = canvas.parentElement.clientWidth || 600;
+  const H = 200;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, W, H);
+
+  const months = 24;
+  const pad = { top:16, right:16, bottom:28, left:60 };
+  const cW = W - pad.left - pad.right;
+  const cH = H - pad.top - pad.bottom;
+  const monthlyBurn = c.burnPerMo;
+
+  const costLine = [], walkLine = [];
+  for (let m = 0; m <= months; m++) {
+    costLine.push(m * monthlyBurn);
+    walkLine.push(Math.max(0, c.equalization - m * monthlyBurn));
+  }
+  const maxV = Math.max(costLine[months], c.equalization) || 1;
+  function xP(m) { return pad.left + (m / months) * cW; }
+  function yP(v) { return pad.top + cH - (v / maxV) * cH; }
+
+  // Grid
+  ctx.setLineDash([2,4]); ctx.strokeStyle='rgba(160,154,144,.25)'; ctx.lineWidth=0.5;
+  for (let i=0;i<=4;i++){const y=pad.top+(cH/4)*i;ctx.beginPath();ctx.moveTo(pad.left,y);ctx.lineTo(pad.left+cW,y);ctx.stroke();}
+  ctx.setLineDash([]);
+
+  // Cost fill + line
+  const bg=ctx.createLinearGradient(0,pad.top,0,pad.top+cH);
+  bg.addColorStop(0,'rgba(184,58,58,.18)');bg.addColorStop(1,'rgba(184,58,58,.02)');
+  ctx.beginPath();ctx.moveTo(xP(0),yP(0));
+  costLine.forEach((v,m)=>ctx.lineTo(xP(m),yP(v)));
+  ctx.lineTo(xP(months),yP(0));ctx.closePath();ctx.fillStyle=bg;ctx.fill();
+  ctx.beginPath();costLine.forEach((v,m)=>m===0?ctx.moveTo(xP(m),yP(v)):ctx.lineTo(xP(m),yP(v)));
+  ctx.strokeStyle='#b83a3a';ctx.lineWidth=2;ctx.stroke();
+
+  // Walkaway fill + line
+  const eg=ctx.createLinearGradient(0,pad.top,0,pad.top+cH);
+  eg.addColorStop(0,'rgba(58,110,168,.18)');eg.addColorStop(1,'rgba(58,110,168,.02)');
+  ctx.beginPath();ctx.moveTo(xP(0),yP(walkLine[0]));
+  walkLine.forEach((v,m)=>ctx.lineTo(xP(m),yP(v)));
+  ctx.lineTo(xP(months),yP(0));ctx.lineTo(xP(0),yP(0));ctx.closePath();ctx.fillStyle=eg;ctx.fill();
+  ctx.beginPath();walkLine.forEach((v,m)=>m===0?ctx.moveTo(xP(m),yP(v)):ctx.lineTo(xP(m),yP(v)));
+  ctx.strokeStyle='#3a6ea8';ctx.lineWidth=2;ctx.stroke();
+
+  // Current scenario dot
+  const mo = Math.min(D.settlementMonths, months);
+  ctx.beginPath();ctx.arc(xP(mo),yP(walkLine[mo]),5,0,Math.PI*2);
+  ctx.fillStyle='#8a5c00';ctx.fill();
+
+  // Labels
+  ctx.fillStyle='#a09a90';ctx.font='9px DM Mono,monospace';ctx.textAlign='center';
+  [0,6,12,18,24].forEach(m=>ctx.fillText('mo '+m,xP(m),H-pad.bottom+14));
+  ctx.textAlign='right';
+  for(let i=0;i<=4;i++){
+    const v=(maxV/4)*i;
+    ctx.fillText(v>=1000?'$'+Math.round(v/1000)+'K':'$'+Math.round(v),pad.left-4,yP(v)+3);
+  }
+}
+
+/* ── PASSWORD GATE ── */
+const GATE_PASS = 'newstart56';
+function checkGate() {
+  const val = (document.getElementById('gate-input').value || '').trim().toLowerCase();
+  if (val === GATE_PASS) {
+    const g = document.getElementById('gate');
+    g.style.display = 'none';
+    g.style.pointerEvents = 'none';
+    g.setAttribute('aria-hidden', 'true');
+  } else {
+    const err = document.getElementById('gate-err');
+    err.textContent = 'Incorrect password.';
+    document.getElementById('gate-input').value = '';
+    setTimeout(()=>{err.textContent='';},3000);
+  }
+}
+document.addEventListener('keydown', e => {
+  const gate = document.getElementById('gate');
+  if (gate && gate.style.display !== 'none' && e.key === 'Enter') checkGate();
+});
+
+/* ── COUNTDOWN ── */
+function updateCountdown() {
+  const diff = D.hearingDate - new Date();
+  const days = Math.max(0, Math.ceil(diff/86400000));
+  set('cmd-days', days);
+  set('tb-days',  days);
+}
+
+/* ── NAV ── */
+function showPanel(id, btn) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.rail-btn,.bn-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  document.querySelectorAll('[onclick*="\''+id+'\'"]').forEach(b=>b.classList.add('active'));
+  if (id === 'command')   { setTimeout(()=>{ const c=derived(); drawDepletionChart(c); },50); }
+  if (id === 'scenarios') { setTimeout(()=>{ const c=derived(); drawDelayChart(c); },50); }
+}
+
+/* ── INIT ── */
+document.addEventListener('DOMContentLoaded', ()=>{
+  renderAll();
+  updateCountdown();
+  setInterval(updateCountdown, 60000);
+  window.addEventListener('resize', ()=>{ const c=derived(); drawDepletionChart(c); drawDelayChart(c); });
+});
+</script>
+</body>
+</html>
